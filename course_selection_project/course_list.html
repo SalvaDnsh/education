@@ -1,0 +1,143 @@
+<!-- templates/courses/course_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Course List{% endblock %}
+
+{% block content %}
+<h1>Course List</h1>
+
+<!-- Selected credits display -->
+<div id="selected-credits" style="margin-bottom: 20px; font-weight: bold;">Selected Credits: 0</div>
+
+<!-- Filter and search form -->
+<form id="filter-form">
+  <select name="department" id="department">
+    <option value="">All Departments</option>
+    {% for department in departments %}
+      <option value="{{ department.id }}">{{ department.name }}</option>
+    {% endfor %}
+  </select>
+  <input type="search" name="search" id="search-input" placeholder="Search by course name or code">
+  <button type="button" id="search-button">Search</button>
+</form>
+
+<!-- Course table -->
+<table border="1" cellpadding="5" cellspacing="0" style="margin-top: 20px; width: 100%;">
+  <thead>
+    <tr>
+      <th>Course Code</th>
+      <th>Course Name</th>
+      <th>Credit Hours</th>
+      <th>Class Time</th>
+      <th>Exam Time</th>
+      <th>Instructor Name</th>
+      <th>Capacity</th> <!-- Updated column -->
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for course in courses %}
+      <tr>
+        <td>{{ course.code }}</td>
+        <td>{{ course.name }}</td>
+        <td>{{ course.credit_hours }}</td>
+        <td>{{ course.class_time }}</td>
+        <td>{{ course.exam_time }}</td>
+        <td>{{ course.instructor_name }}</td>
+        <td>{{ course.filled_capacity }}/{{ course.total_capacity }}</td> <!-- Display combined capacity -->
+        <td>
+          <button type="button" class="toggle-course-btn" data-course-id="{{ course.id }}" data-action="add">
+            Add
+          </button>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- JavaScript for dynamic functionalities -->
+<script>
+  // Filter courses by department dynamically
+  document.getElementById('department').addEventListener('change', function () {
+    const departmentId = this.value;
+    fetch(`/courses/filter_courses/?department_id=${departmentId}`)
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = '';
+        data.forEach(course => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${course.code}</td>
+              <td>${course.name}</td>
+              <td>${course.credit_hours}</td>
+              <td>${course.class_time}</td>
+              <td>${course.exam_time}</td>
+              <td>${course.instructor_name}</td>
+              <td>${course.filled_capacity}/${course.total_capacity}</td>
+              <td>
+                <button type="button" class="toggle-course-btn" data-course-id="${course.id}" data-action="add">Add</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  });
+
+  // Search courses by name or code
+  document.getElementById('search-button').addEventListener('click', function () {
+    const searchQuery = document.getElementById('search-input').value;
+    const departmentId = document.getElementById('department').value;
+    let url = `/courses/?search=${searchQuery}`;
+    if (departmentId) {
+      url += `&department=${departmentId}`;
+    }
+    window.location.href = url; // Reload the page with the search results
+  });
+
+  // Handle add/remove course actions
+  document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('toggle-course-btn')) {
+      const courseId = e.target.dataset.courseId;
+      const action = e.target.dataset.action;
+
+      fetch('/courses/toggle_course_selection/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify({ course_id: courseId, action: action }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          alert(data.message);
+
+          if (data.success) {
+            if (action === 'add') {
+              e.target.textContent = 'Remove';
+              e.target.dataset.action = 'remove';
+              e.target.style.backgroundColor = 'red';
+            } else {
+              e.target.textContent = 'Add';
+              e.target.dataset.action = 'add';
+              e.target.style.backgroundColor = '';
+            }
+
+            // Update selected credits display
+            updateSelectedCredits();
+          }
+        });
+    }
+  });
+
+  // Update selected credits dynamically
+  function updateSelectedCredits() {
+    fetch('/courses/get_selected_credits/')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('selected-credits').textContent = `Selected Credits: ${data.total_credits}`;
+      });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Courses{% endblock %}
+
+{% block content %}
+<h2>Manage Courses</h2>
+
+<table border="1">
+    <tr>
+        <th>Course Code</th>
+        <th>Course Name</th>
+        <th>Credit Hours</th>
+        <th>Instructor</th>
+        <th>Capacity</th>
+        <th>Actions</th>
+    </tr>
+    {% for course in courses %}
+    <tr>
+        <td>{{ course.code }}</td>
+        <td>{{ course.name }}</td>
+        <td>{{ course.credit_hours }}</td>
+        <td>{{ course.instructor_name }}</td>
+        <td>{{ course.filled_capacity }}/{{ course.total_capacity }}</td>
+        <td>
+            <a href="{% url 'edit_course' course.id %}">Edit</a> |
+            <a href="{% url 'delete_course' course.id %}" onclick="return confirm('Are you sure?');">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+{% endblock %}

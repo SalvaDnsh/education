@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Weekly Schedule{% endblock %}
+
+{% block content %}
+<h1>Weekly Schedule</h1>
+
+<table border="1" cellpadding="5" cellspacing="0" style="width: 100%; text-align: center;">
+    <thead>
+        <tr>
+            <th>Time</th>
+            {% for day in days %}
+                <th>{{ day }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for time in schedule_times %}
+        <tr>
+            <td>{{ time }}</td>
+            {% for day in days %}
+                <td>
+                    {% for course in weekly_schedule|dict_key:day %}
+                        {% if course.time == time %}
+                            {{ course.name }}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
